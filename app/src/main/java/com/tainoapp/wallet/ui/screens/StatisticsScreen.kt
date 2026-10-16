@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -29,13 +30,13 @@ fun StatisticsScreen() {
 
     val uiState by statisticsViewModel.uiState.collectAsState()
 
-    if (uiState.budgetHistory.isEmpty()) {
+    if (uiState.relevantHistory.isEmpty()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("No History Yet", style = MaterialTheme.typography.headlineMedium)
             Text("Complete a budget period to see your history here.", style = MaterialTheme.typography.bodyLarge)
@@ -49,7 +50,7 @@ fun StatisticsScreen() {
             item {
                 Text("Budget History", style = MaterialTheme.typography.headlineMedium)
             }
-            items(uiState.budgetHistory.toList()) { (periodKey, categories) ->
+            items(uiState.relevantHistory.toList()) { (periodKey, categories) ->
                 HistoryItem(periodKey = periodKey, categories = categories)
             }
         }

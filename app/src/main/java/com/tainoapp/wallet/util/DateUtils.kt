@@ -8,10 +8,20 @@ import java.util.Locale
 
 object DateUtils {
 
-    /**
-     * Generates a unique, sortable key for a given date and budget cycle.
-     * e.g., "W-2024-32" for weekly, "M-2024-08" for monthly.
-     */
+    private val monthDayFormat = SimpleDateFormat("MMMM d", Locale.getDefault())
+
+    private fun getDayOfMonthWithSuffix(day: Int): String {
+        if (day in 11..13) {
+            return "${day}th"
+        }
+        return when (day % 10) {
+            1 -> "${day}st"
+            2 -> "${day}nd"
+            3 -> "${day}rd"
+            else -> "${day}th"
+        }
+    }
+
     fun getPeriodKey(date: Date, cycle: BudgetCycle): String {
         val calendar = Calendar.getInstance().apply { time = date }
         val year = calendar.get(Calendar.YEAR)
@@ -22,45 +32,65 @@ object DateUtils {
                 "W-$year-$week"
             }
             BudgetCycle.BI_WEEKLY -> {
-                // For bi-weekly, we can divide the week by 2 to create two-week blocks.
                 val week = calendar.get(Calendar.WEEK_OF_YEAR)
                 val biWeek = (week + 1) / 2
                 "B-$year-$biWeek"
             }
             BudgetCycle.MONTHLY -> {
-                val month = calendar.get(Calendar.MONTH) + 1 // Calendar.MONTH is 0-indexed
+                val month = calendar.get(Calendar.MONTH) + 1
                 "M-$year-${String.format("%02d", month)}"
             }
         }
     }
 
-    /**
-     * Converts a period key back into a human-readable string for display.
-     */
     fun parsePeriodKey(key: String): String {
         val parts = key.split("-")
         if (parts.size != 3) return "Invalid Period"
 
-        val year = parts[1]
-        val periodNum = parts[2].toIntOrNull() ?: 0
+        val year = parts[1].toIntOrNull() ?: return "Invalid Year"
+        val periodNum = parts[2].toIntOrNull() ?: return "Invalid Period Number"
 
         return when (parts[0]) {
-            "W" -> "Week $periodNum, $year"
-            "B" -> "Bi-Week $periodNum, $year"
+            "W" -> {
+                val cal = Calendar.getInstance().apply {
+                    clear()
+                    firstDayOfWeek = Calendar.MONDAY // Corrected
+                    set(Calendar.YEAR, year)
+                    set(Calendar.WEEK_OF_YEAR, periodNum)
+                    set(Calendar.DAY_OF_WEEK, Calendar.MONDAY) // Corrected
+                }
+                val startDate = cal.time
+                val startDayString = getDayOfMonthWithSuffix(cal.get(Calendar.DAY_OF_MONTH))
+                val startMonthString = SimpleDateFormat("MMMM", Locale.getDefault()).format(startDate)
+                cal.add(Calendar.DATE, 6)
+                val endDate = cal.time
+                "Week of $startMonthString $startDayString (${monthDayFormat.format(startDate)} - ${monthDayFormat.format(endDate)})"
+            }
+            "B" -> {
+                val startWeek = (periodNum - 1) * 2 + 1
+                val cal = Calendar.getInstance().apply {
+                    clear()
+                    firstDayOfWeek = Calendar.MONDAY // Corrected
+                    set(Calendar.YEAR, year)
+                    set(Calendar.WEEK_OF_YEAR, startWeek)
+                    set(Calendar.DAY_OF_WEEK, Calendar.MONDAY) // Corrected
+                }
+                val startDate = cal.time
+                val startDayString = getDayOfMonthWithSuffix(cal.get(Calendar.DAY_OF_MONTH))
+                val startMonthString = SimpleDateFormat("MMMM", Locale.getDefault()).format(startDate)
+                cal.add(Calendar.DATE, 13)
+                val endDate = cal.time
+                "Weeks of $startMonthString $startDayString (${monthDayFormat.format(startDate)} - ${monthDayFormat.format(endDate)})"
+            }
             "M" -> {
-                val monthName = SimpleDateFormat("MMMM", Locale.getDefault()).format(Date(0).apply {
-                    time = SimpleDateFormat("yyyy-MM", Locale.getDefault()).parse("$year-$periodNum")?.time ?: 0
-                })
-                "$monthName $year"
+                val cal = Calendar.getInstance().apply {
+                    clear()
+                    set(Calendar.YEAR, year)
+                    set(Calendar.MONTH, periodNum - 1)
+                }
+                SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
             }
             else -> "Unknown Period"
         }
-    }
-    
-    /**
-     * Checks if a new budget period has started since the last known date.
-     */
-    fun isNewPeriod(lastPeriodKey: String, currentPeriodKey: String): Boolean {
-        return lastPeriodKey != currentPeriodKey
     }
 }

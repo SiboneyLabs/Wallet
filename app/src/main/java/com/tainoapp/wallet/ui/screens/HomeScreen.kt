@@ -13,8 +13,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tainoapp.wallet.WalletApplication
 import com.tainoapp.wallet.ui.screens.home.AddCategoryDialog
 import com.tainoapp.wallet.ui.screens.home.BalanceCard
+import com.tainoapp.wallet.ui.screens.home.CategoriesCard
+import com.tainoapp.wallet.ui.screens.home.CurrentPeriodCard
 import com.tainoapp.wallet.ui.screens.home.EditBalanceDialog
-import com.tainoapp.wallet.ui.screens.home.ExpenseOverviewCard
 import com.tainoapp.wallet.ui.screens.home.UpdateCategoryDialog
 import com.tainoapp.wallet.ui.viewmodels.HomeViewModel
 
@@ -32,9 +33,10 @@ fun HomeScreen() {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         BalanceCard(balance = uiState.balance, onClick = homeViewModel::onOpenEditBalanceDialog)
+        
+        CurrentPeriodCard(currentPeriodKey = uiState.currentPeriodKey)
 
-        ExpenseOverviewCard(
-            budgetCycle = uiState.budgetCycle,
+        CategoriesCard(
             categories = uiState.currentCategories,
             isRemoveModeEnabled = uiState.isRemoveModeEnabled,
             onAddCategory = homeViewModel::onOpenAddCategoryDialog,

@@ -9,9 +9,11 @@ import com.tainoapp.wallet.data.BudgetCycle
 import com.tainoapp.wallet.repository.UserPreferencesRepository
 import com.tainoapp.wallet.util.DateUtils
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -21,6 +23,7 @@ data class HomeUiState(
     val balance: Float = 0f,
     val currentCategories: List<BudgetCategory> = emptyList(),
     val budgetCycle: BudgetCycle = BudgetCycle.WEEKLY,
+    val currentPeriodKey: String = "",
     val isEditBalanceDialogShown: Boolean = false,
     val isAddCategoryDialogShown: Boolean = false,
     val isUpdateCategoryDialogShown: Boolean = false,
@@ -30,37 +33,48 @@ data class HomeUiState(
 
 class HomeViewModel(private val userPreferencesRepository: UserPreferencesRepository) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _budgetHistory = MutableStateFlow<Map<String, List<BudgetCategory>>>(emptyMap())
+    private val _dialogAndModeState = MutableStateFlow(HomeUiState())
+
+    val uiState: StateFlow<HomeUiState> = combine(
+        userPreferencesRepository.balance,
+        userPreferencesRepository.budgetCycle,
+        _budgetHistory,
+        _dialogAndModeState
+    ) { balance, cycle, history, dialogState ->
+        val currentPeriodKey = DateUtils.getPeriodKey(Date(), cycle)
+        HomeUiState(
+            balance = balance,
+            budgetCycle = cycle,
+            currentPeriodKey = currentPeriodKey,
+            currentCategories = history[currentPeriodKey] ?: emptyList(),
+            isEditBalanceDialogShown = dialogState.isEditBalanceDialogShown,
+            isAddCategoryDialogShown = dialogState.isAddCategoryDialogShown,
+            isUpdateCategoryDialogShown = dialogState.isUpdateCategoryDialogShown,
+            isRemoveModeEnabled = dialogState.isRemoveModeEnabled,
+            categoryToUpdate = dialogState.categoryToUpdate
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = HomeUiState()
+    )
 
     init {
         viewModelScope.launch {
-            val initialBalance = userPreferencesRepository.balance.first()
-            val initialCycle = userPreferencesRepository.budgetCycle.first()
-            var history = userPreferencesRepository.budgetHistory.first()
+            userPreferencesRepository.budgetCycle.collect { cycle ->
+                var history = userPreferencesRepository.budgetHistory.first()
+                val currentPeriodKey = DateUtils.getPeriodKey(Date(), cycle)
 
-            val currentPeriodKey = DateUtils.getPeriodKey(Date(), initialCycle)
-
-            // If the current period doesn't exist, it's a new period. Time to roll over.
-            if (!history.containsKey(currentPeriodKey)) {
-                val lastPeriodKey = history.keys.maxOrNull() // Find the most recent period
-                val categoriesToCopy = if (lastPeriodKey != null) {
-                    history[lastPeriodKey]!!
-                } else {
-                    // If no history exists, it's the first ever run.
-                    getDefaultCategories()
+                if (!history.containsKey(currentPeriodKey)) {
+                    val lastPeriodKey = history.keys.maxOrNull()
+                    val categoriesToCopy = if (lastPeriodKey != null) history[lastPeriodKey]!! else getDefaultCategories()
+                    val newPeriodCategories = categoriesToCopy.map { it.copy(currentAmount = 0f) }
+                    history = history + (currentPeriodKey to newPeriodCategories)
+                    userPreferencesRepository.saveBudgetHistory(history)
                 }
-                // Reset amounts for the new period.
-                val newPeriodCategories = categoriesToCopy.map { it.copy(currentAmount = 0f) }
-                history = history + (currentPeriodKey to newPeriodCategories)
-                userPreferencesRepository.saveBudgetHistory(history)
+                _budgetHistory.value = history
             }
-
-            _uiState.value = HomeUiState(
-                balance = initialBalance,
-                budgetCycle = initialCycle,
-                currentCategories = history[currentPeriodKey] ?: emptyList()
-            )
         }
     }
 
@@ -74,60 +88,47 @@ class HomeViewModel(private val userPreferencesRepository: UserPreferencesReposi
         )
     }
 
-    // --- Event Handlers --- //
-
     private fun updateAndSaveCategories(newCategories: List<BudgetCategory>) {
-        val currentPeriodKey = DateUtils.getPeriodKey(Date(), _uiState.value.budgetCycle)
-        viewModelScope.launch {
-            val currentHistory = userPreferencesRepository.budgetHistory.first()
-            val newHistory = currentHistory + (currentPeriodKey to newCategories)
-            userPreferencesRepository.saveBudgetHistory(newHistory)
-            _uiState.update { it.copy(currentCategories = newCategories) }
-        }
+        val currentPeriodKey = DateUtils.getPeriodKey(Date(), uiState.value.budgetCycle)
+        val newHistory = _budgetHistory.value + (currentPeriodKey to newCategories)
+        _budgetHistory.value = newHistory
+        viewModelScope.launch { userPreferencesRepository.saveBudgetHistory(newHistory) }
     }
 
-    fun onOpenEditBalanceDialog() = _uiState.update { it.copy(isEditBalanceDialogShown = true) }
-    fun onOpenAddCategoryDialog() = _uiState.update { it.copy(isAddCategoryDialogShown = true) }
-    fun onOpenUpdateCategoryDialog(category: BudgetCategory) = _uiState.update { it.copy(isUpdateCategoryDialogShown = true, categoryToUpdate = category) }
-    fun onToggleRemoveMode() = _uiState.update { it.copy(isRemoveModeEnabled = !it.isRemoveModeEnabled) }
-    fun onCloseDialogs() = _uiState.update { it.copy(isEditBalanceDialogShown = false, isAddCategoryDialogShown = false, isUpdateCategoryDialogShown = false, categoryToUpdate = null) }
+    fun onOpenEditBalanceDialog() = _dialogAndModeState.update { it.copy(isEditBalanceDialogShown = true) }
+    fun onOpenAddCategoryDialog() = _dialogAndModeState.update { it.copy(isAddCategoryDialogShown = true) }
+    fun onOpenUpdateCategoryDialog(category: BudgetCategory) = _dialogAndModeState.update { it.copy(isUpdateCategoryDialogShown = true, categoryToUpdate = category) }
+    fun onToggleRemoveMode() = _dialogAndModeState.update { it.copy(isRemoveModeEnabled = !it.isRemoveModeEnabled) }
+    fun onCloseDialogs() = _dialogAndModeState.update { it.copy(isEditBalanceDialogShown = false, isAddCategoryDialogShown = false, isUpdateCategoryDialogShown = false, categoryToUpdate = null) }
 
     fun onAddCategory(name: String, target: Float) {
         val newCategory = BudgetCategory(name, target, 0f, Color(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256)).value)
-        val newCategories = _uiState.value.currentCategories + newCategory
-        _uiState.update { it.copy(isAddCategoryDialogShown = false) } 
-        updateAndSaveCategories(newCategories)
+        updateAndSaveCategories(uiState.value.currentCategories + newCategory)
+        onCloseDialogs()
     }
 
     fun onRemoveCategory(category: BudgetCategory) {
-        val newCategories = _uiState.value.currentCategories.filter { c -> c.name != category.name }
-        updateAndSaveCategories(newCategories)
+        updateAndSaveCategories(uiState.value.currentCategories.filter { it.name != category.name })
     }
 
     fun onUpdateCategory(category: BudgetCategory, amountToAdd: Float, newTarget: Float) {
-        val newBalance = _uiState.value.balance - amountToAdd
+        val newBalance = uiState.value.balance - amountToAdd
         val updatedCategory = category.copy(currentAmount = category.currentAmount + amountToAdd, target = newTarget)
-        val newCategories = _uiState.value.currentCategories.map { c -> if (c.name == category.name) updatedCategory else c }
-
-        _uiState.update { it.copy(balance = newBalance, isUpdateCategoryDialogShown = false, categoryToUpdate = null) }
-        updateAndSaveCategories(newCategories)
-
-        viewModelScope.launch { userPreferencesRepository.updateBalance(newBalance) }
+        updateAndSaveCategories(uiState.value.currentCategories.map { if (it.name == category.name) updatedCategory else it })
+        onUpdateBalance(newBalance)
+        onCloseDialogs()
     }
 
     fun onClearCategory(category: BudgetCategory) {
-        val newBalance = _uiState.value.balance + category.currentAmount
+        val newBalance = uiState.value.balance + category.currentAmount
         val clearedCategory = category.copy(currentAmount = 0f, target = 0f)
-        val newCategories = _uiState.value.currentCategories.map { c -> if (c.name == category.name) clearedCategory else c }
-
-        _uiState.update { it.copy(balance = newBalance, isUpdateCategoryDialogShown = false, categoryToUpdate = null) }
-        updateAndSaveCategories(newCategories)
-
-        viewModelScope.launch { userPreferencesRepository.updateBalance(newBalance) }
+        updateAndSaveCategories(uiState.value.currentCategories.map { if (it.name == category.name) clearedCategory else it })
+        onUpdateBalance(newBalance)
+        onCloseDialogs()
     }
 
     fun onUpdateBalance(newBalance: Float) {
-        _uiState.update { it.copy(balance = newBalance, isEditBalanceDialogShown = false) }
+        _dialogAndModeState.update { it.copy(isEditBalanceDialogShown = false) }
         viewModelScope.launch { userPreferencesRepository.updateBalance(newBalance) }
     }
 

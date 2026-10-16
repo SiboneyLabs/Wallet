@@ -1,6 +1,7 @@
 package com.tainoapp.wallet.ui.screens.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,22 +25,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tainoapp.wallet.data.BudgetCategory
-import com.tainoapp.wallet.data.BudgetCycle
+import com.tainoapp.wallet.util.DateUtils
 import com.tainoapp.wallet.ui.theme.WalletTheme
 
-/**
- * A card that displays an overview of the user's expenses for a given budget cycle.
- * @param budgetCycle The current budget cycle, used for the card's title.
- * @param categories The list of categories to display.
- * @param isRemoveModeEnabled Whether the UI is in remove mode.
- * @param onAddCategory The action to perform when the add button is tapped.
- * @param onRemoveCategory The action to perform when the remove button is tapped.
- * @param onCategoryClick The action to perform when a category is tapped.
- * @param onCategoryRemoveClick The action for when a category's remove icon is tapped.
- */
 @Composable
 fun ExpenseOverviewCard(
-    budgetCycle: BudgetCycle,
+    currentPeriodKey: String,
     categories: List<BudgetCategory>,
     isRemoveModeEnabled: Boolean,
     onAddCategory: () -> Unit,
@@ -47,28 +38,28 @@ fun ExpenseOverviewCard(
     onCategoryClick: (BudgetCategory) -> Unit,
     onCategoryRemoveClick: (BudgetCategory) -> Unit
 ) {
-    val title = when (budgetCycle) {
-        BudgetCycle.WEEKLY -> "Weekly Overview"
-        BudgetCycle.BI_WEEKLY -> "Bi-Weekly Overview"
-        BudgetCycle.MONTHLY -> "Monthly Overview"
-    }
-
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Use a Box to allow for independent alignment
+            Box(
+                modifier = Modifier.fillMaxWidth()
             ) {
+                // Title is aligned to the start, with padding to avoid buttons
                 Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge
+                    text = "Current Period:\n${DateUtils.parsePeriodKey(currentPeriodKey)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(end = 96.dp) // Keep text from flowing under buttons
                 )
-                Row {
+                // Buttons are aligned to the end
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
                     IconButton(onClick = onAddCategory) {
                         Icon(Icons.Default.Add, contentDescription = "Add Category")
                     }
@@ -100,9 +91,10 @@ fun ExpenseOverviewCard(
 @Preview(showBackground = true)
 @Composable
 fun ExpenseOverviewCardPreview() {
+    val previewKey = "W-2024-45"
     WalletTheme {
         ExpenseOverviewCard(
-            budgetCycle = BudgetCycle.WEEKLY,
+            currentPeriodKey = previewKey,
             categories = listOf(
                 BudgetCategory("Groceries", 400f, 150f, Color.Green.value),
                 BudgetCategory("Gas", 150f, 75f, Color.Red.value)

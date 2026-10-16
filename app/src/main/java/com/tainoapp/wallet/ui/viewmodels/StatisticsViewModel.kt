@@ -4,30 +4,38 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.tainoapp.wallet.data.BudgetCategory
+import com.tainoapp.wallet.data.BudgetCycle
 import com.tainoapp.wallet.repository.UserPreferencesRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 
 data class StatisticsUiState(
-    val budgetHistory: Map<String, List<BudgetCategory>> = emptyMap()
+    val relevantHistory: Map<String, List<BudgetCategory>> = emptyMap()
 )
 
 class StatisticsViewModel(private val userPreferencesRepository: UserPreferencesRepository) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(StatisticsUiState())
-    val uiState: StateFlow<StatisticsUiState> = _uiState.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            val history = userPreferencesRepository.budgetHistory.first()
-            // Sort the history so the most recent period is first.
-            val sortedHistory = history.toSortedMap(compareByDescending { it })
-            _uiState.value = StatisticsUiState(budgetHistory = sortedHistory)
+    val uiState: StateFlow<StatisticsUiState> = combine(
+        userPreferencesRepository.budgetHistory,
+        userPreferencesRepository.budgetCycle
+    ) { history, cycle ->
+        val keyPrefix = when (cycle) {
+            BudgetCycle.WEEKLY -> "W-"
+            BudgetCycle.BI_WEEKLY -> "B-"
+            BudgetCycle.MONTHLY -> "M-"
         }
-    }
+        
+        val filteredHistory = history.filter { it.key.startsWith(keyPrefix) }
+        val sortedHistory = filteredHistory.toSortedMap(compareByDescending { it })
+
+        StatisticsUiState(relevantHistory = sortedHistory)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = StatisticsUiState()
+    )
 
     companion object {
         fun provideFactory(userPreferencesRepository: UserPreferencesRepository): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
