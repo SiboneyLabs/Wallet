@@ -59,7 +59,7 @@ fun UpdateCategoryDialog(
                     value = amountToAdd,
                     onValueChange = { amountToAdd = it },
                     label = { Text("Amount to Add") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberDecimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -67,7 +67,7 @@ fun UpdateCategoryDialog(
                     value = newTarget,
                     onValueChange = { newTarget = it },
                     label = { Text("Edit Monthly Target") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberDecimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
             }

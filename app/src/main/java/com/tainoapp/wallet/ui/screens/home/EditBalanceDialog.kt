@@ -41,7 +41,7 @@ fun EditBalanceDialog(
                     onValueChange = { text = it },
                     label = { Text("New Balance") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberDecimal)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
         },

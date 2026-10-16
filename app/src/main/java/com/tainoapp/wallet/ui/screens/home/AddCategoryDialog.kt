@@ -49,7 +49,7 @@ fun AddCategoryDialog(
                     onValueChange = { target = it },
                     label = { Text("Monthly Target") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberDecimal)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
         },

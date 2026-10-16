@@ -29,7 +29,7 @@ import com.tainoapp.wallet.ui.screens.StatisticsScreen
 fun AppNavigation(windowSizeClass: WindowSizeClass) {
     val navController = rememberNavController()
     val screens = listOf(Screen.Home, Screen.Statistics, Screen.Goals, Screen.Settings)
-    val showNavRail = windowSizeClass.widthSizeClass > WindowWidthSizeClass.Compact
+    val showNavRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
 
     if (showNavRail) {
         // Tablet layout with Navigation Rail
