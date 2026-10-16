@@ -67,7 +67,7 @@ fun UpdateCategoryDialog(
                 OutlinedTextField(
                     value = newTarget,
                     onValueChange = { newTarget = it },
-                    label = { Text("Edit Monthly Target") },
+                    label = { Text("Edit Target") }, // Corrected Text
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
                 )
