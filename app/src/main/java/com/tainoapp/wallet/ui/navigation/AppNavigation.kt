@@ -9,7 +9,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
@@ -25,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -37,17 +37,35 @@ import com.tainoapp.wallet.ui.screens.SettingsScreen
 import com.tainoapp.wallet.ui.screens.StatisticsScreen
 import com.tainoapp.wallet.ui.screens.settings.AboutDialog
 
+// Final, simplified, and robust navigation logic
+private fun navigateToTopLevelDestination(navController: NavController, screen: Screen) {
+    navController.navigate(screen.route) {
+        popUpTo(navController.graph.findStartDestination().id) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = false // Set restoreState to false to force recreation
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation(windowSizeClass: WindowSizeClass) {
     val navController = rememberNavController()
-    // Settings is removed from the primary navigation
     val screens = listOf(Screen.Home, Screen.Statistics, Screen.Goals)
     val showNavRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
 
-    // State for the dropdown menu and About dialog
     var showMenu by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+
+    val appNavHost: @Composable (Modifier) -> Unit = {
+        NavHost(navController, startDestination = Screen.Home.route, modifier = it) {
+            composable(Screen.Home.route) { HomeScreen() }
+            composable(Screen.Statistics.route) { StatisticsScreen() }
+            composable(Screen.Goals.route) { GoalsScreen() }
+            composable(Screen.Settings.route) { SettingsScreen() }
+        }
+    }
 
     if (showNavRail) {
         Row {
@@ -59,12 +77,11 @@ fun AppNavigation(windowSizeClass: WindowSizeClass) {
                         icon = { Icon(screen.icon, contentDescription = null) },
                         label = { Text(screen.title) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                        onClick = { /* Navigation logic remains the same */ }
+                        onClick = { navigateToTopLevelDestination(navController, screen) }
                     )
                 }
             }
-            // The NavHost and its content remain the same
-            NavHost(navController, startDestination = Screen.Home.route) { /* ... */ }
+            appNavHost(Modifier)
         }
     } else {
         Scaffold(
@@ -75,24 +92,9 @@ fun AppNavigation(windowSizeClass: WindowSizeClass) {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Budget Cycle") },
-                                onClick = {
-                                    navController.navigate(Screen.Settings.route)
-                                    showMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("About") },
-                                onClick = {
-                                    showAboutDialog = true
-                                    showMenu = false
-                                }
-                            )
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(text = { Text("Budget Cycle") }, onClick = { navController.navigate(Screen.Settings.route); showMenu = false })
+                            DropdownMenuItem(text = { Text("About") }, onClick = { showAboutDialog = true; showMenu = false })
                         }
                     }
                 )
@@ -106,29 +108,17 @@ fun AppNavigation(windowSizeClass: WindowSizeClass) {
                             icon = { Icon(screen.icon, contentDescription = null) },
                             label = { Text(screen.title) },
                             selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
+                            onClick = { navigateToTopLevelDestination(navController, screen) }
                         )
                     }
                 }
             }
         ) { innerPadding ->
-            NavHost(navController, startDestination = Screen.Home.route, modifier = Modifier.padding(innerPadding)) {
-                composable(Screen.Home.route) { HomeScreen() }
-                composable(Screen.Statistics.route) { StatisticsScreen() }
-                composable(Screen.Goals.route) { GoalsScreen() }
-                // The settings route is still needed for navigation
-                composable(Screen.Settings.route) { SettingsScreen() }
-            }
-
-            if (showAboutDialog) {
-                AboutDialog(onDismissRequest = { showAboutDialog = false })
-            }
+            appNavHost(Modifier.padding(innerPadding))
         }
+    }
+
+    if (showAboutDialog) {
+        AboutDialog(onDismissRequest = { showAboutDialog = false })
     }
 }

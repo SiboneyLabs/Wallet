@@ -27,7 +27,6 @@ fun HomeScreen() {
 
     val uiState by homeViewModel.uiState.collectAsState()
 
-    // The HomeScreen is now "dumb". It only displays the state and sends events.
     Column(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -36,7 +35,7 @@ fun HomeScreen() {
 
         ExpenseOverviewCard(
             budgetCycle = uiState.budgetCycle,
-            categories = uiState.categories,
+            categories = uiState.currentCategories,
             isRemoveModeEnabled = uiState.isRemoveModeEnabled,
             onAddCategory = homeViewModel::onOpenAddCategoryDialog,
             onRemoveCategory = homeViewModel::onToggleRemoveMode,

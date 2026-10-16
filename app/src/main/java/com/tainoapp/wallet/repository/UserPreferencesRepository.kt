@@ -22,59 +22,28 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
     private companion object {
         val TOTAL_BALANCE = floatPreferencesKey("total_balance")
         val BUDGET_CYCLE = stringPreferencesKey("budget_cycle")
-        val LAST_ROLLOVER_TIMESTAMP = longPreferencesKey("last_rollover_timestamp")
-        val CATEGORIES_JSON = stringPreferencesKey("categories_json")
+        val LAST_ROLLOVER_TIMESTAMP = longPreferencesKey("last_rollover_timestamp") // This might become obsolete, but we'll keep it for now.
+        val BUDGET_HISTORY_JSON = stringPreferencesKey("budget_history_json")
         const val TAG = "UserPrefsRepository"
     }
 
     val balance: Flow<Float> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading balance.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }
+        .catch { if (it is IOException) { Log.e(TAG, "Error reading balance.", it); emit(emptyPreferences()) } else { throw it } }
         .map { it[TOTAL_BALANCE] ?: 0f }
 
     val budgetCycle: Flow<BudgetCycle> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading budget cycle.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }
+        .catch { if (it is IOException) { Log.e(TAG, "Error reading budget cycle.", it); emit(emptyPreferences()) } else { throw it } }
         .map { BudgetCycle.valueOf(it[BUDGET_CYCLE] ?: BudgetCycle.WEEKLY.name) }
 
-    val lastRolloverTimestamp: Flow<Long> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading rollover timestamp.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }
-        .map { it[LAST_ROLLOVER_TIMESTAMP] ?: 0L }
-
-    val categories: Flow<List<BudgetCategory>> = dataStore.data
-        .catch {
-            if (it is IOException) {
-                Log.e(TAG, "Error reading categories.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }
+    // The new flow for the entire budget history
+    val budgetHistory: Flow<Map<String, List<BudgetCategory>>> = dataStore.data
+        .catch { if (it is IOException) { Log.e(TAG, "Error reading history.", it); emit(emptyPreferences()) } else { throw it } }
         .map { preferences ->
-            val jsonString = preferences[CATEGORIES_JSON]
+            val jsonString = preferences[BUDGET_HISTORY_JSON]
             if (jsonString.isNullOrEmpty()) {
-                emptyList()
+                emptyMap()
             } else {
-                Json.decodeFromString<List<BudgetCategory>>(jsonString)
+                Json.decodeFromString<Map<String, List<BudgetCategory>>>(jsonString)
             }
         }
 
@@ -85,13 +54,10 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
     suspend fun updateBudgetCycle(budgetCycle: BudgetCycle) {
         dataStore.edit { it[BUDGET_CYCLE] = budgetCycle.name }
     }
-
-    suspend fun updateLastRolloverTimestamp(timestamp: Long) {
-        dataStore.edit { it[LAST_ROLLOVER_TIMESTAMP] = timestamp }
-    }
-
-    suspend fun saveCategories(categories: List<BudgetCategory>) {
-        val jsonString = Json.encodeToString(categories)
-        dataStore.edit { it[CATEGORIES_JSON] = jsonString }
+    
+    // The new function to save the entire history
+    suspend fun saveBudgetHistory(history: Map<String, List<BudgetCategory>>) {
+        val jsonString = Json.encodeToString(history)
+        dataStore.edit { it[BUDGET_HISTORY_JSON] = jsonString }
     }
 }
