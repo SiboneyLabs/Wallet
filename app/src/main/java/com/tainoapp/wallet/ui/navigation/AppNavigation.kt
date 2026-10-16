@@ -31,20 +31,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.tainoapp.wallet.ui.screens.GoalsScreen
 import com.tainoapp.wallet.ui.screens.HomeScreen
 import com.tainoapp.wallet.ui.screens.SettingsScreen
 import com.tainoapp.wallet.ui.screens.StatisticsScreen
 import com.tainoapp.wallet.ui.screens.settings.AboutDialog
 
-// Final, simplified, and robust navigation logic
 private fun navigateToTopLevelDestination(navController: NavController, screen: Screen) {
     navController.navigate(screen.route) {
-        popUpTo(navController.graph.findStartDestination().id) {
-            saveState = true
-        }
+        popUpTo(navController.graph.findStartDestination().id)
         launchSingleTop = true
-        restoreState = false // Set restoreState to false to force recreation
     }
 }
 
@@ -52,7 +47,8 @@ private fun navigateToTopLevelDestination(navController: NavController, screen: 
 @Composable
 fun AppNavigation(windowSizeClass: WindowSizeClass) {
     val navController = rememberNavController()
-    val screens = listOf(Screen.Home, Screen.Statistics, Screen.Goals)
+    // Goals screen removed from the list
+    val screens = listOf(Screen.Home, Screen.Statistics)
     val showNavRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
 
     var showMenu by remember { mutableStateOf(false) }
@@ -62,7 +58,7 @@ fun AppNavigation(windowSizeClass: WindowSizeClass) {
         NavHost(navController, startDestination = Screen.Home.route, modifier = it) {
             composable(Screen.Home.route) { HomeScreen() }
             composable(Screen.Statistics.route) { StatisticsScreen() }
-            composable(Screen.Goals.route) { GoalsScreen() }
+            // Goals composable removed
             composable(Screen.Settings.route) { SettingsScreen() }
         }
     }

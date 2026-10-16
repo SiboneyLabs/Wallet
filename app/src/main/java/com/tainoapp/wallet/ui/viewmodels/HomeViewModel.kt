@@ -109,6 +109,7 @@ class HomeViewModel(private val userPreferencesRepository: UserPreferencesReposi
 
     fun onRemoveCategory(category: BudgetCategory) {
         updateAndSaveCategories(uiState.value.currentCategories.filter { it.name != category.name })
+        _dialogAndModeState.update { it.copy(isRemoveModeEnabled = false) } // Exit remove mode
     }
 
     fun onUpdateCategory(category: BudgetCategory, amountToAdd: Float, newTarget: Float) {
