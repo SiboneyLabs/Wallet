@@ -11,23 +11,39 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
+
+// Add totalAddedFunds to the UI state
+data class PeriodHistory(
+    val categories: List<BudgetCategory>,
+    val totalAddedFunds: Float
+)
+
 data class StatisticsUiState(
-    val relevantHistory: Map<String, List<BudgetCategory>> = emptyMap()
+    val relevantHistory: Map<String, PeriodHistory> = emptyMap()
 )
 
 class StatisticsViewModel(private val userPreferencesRepository: UserPreferencesRepository) : ViewModel() {
 
     val uiState: StateFlow<StatisticsUiState> = combine(
         userPreferencesRepository.budgetHistory,
+        userPreferencesRepository.fundsAddedHistory,
         userPreferencesRepository.budgetCycle
-    ) { history, cycle ->
+    ) { budgetHistory, fundsHistory, cycle ->
         val keyPrefix = when (cycle) {
             BudgetCycle.WEEKLY -> "W-"
             BudgetCycle.BI_WEEKLY -> "B-"
             BudgetCycle.MONTHLY -> "M-"
         }
-        
-        val filteredHistory = history.filter { it.key.startsWith(keyPrefix) }
+
+        val filteredHistory = budgetHistory
+            .filter { it.key.startsWith(keyPrefix) }
+            .mapValues { (key, categories) ->
+                PeriodHistory(
+                    categories = categories,
+                    totalAddedFunds = fundsHistory[key] ?: 0f
+                )
+            }
+
         val sortedHistory = filteredHistory.toSortedMap(compareByDescending { it })
 
         StatisticsUiState(relevantHistory = sortedHistory)

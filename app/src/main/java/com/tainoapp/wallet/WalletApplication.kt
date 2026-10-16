@@ -6,6 +6,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.tainoapp.wallet.repository.UserPreferencesRepository
+import com.google.firebase.analytics.FirebaseAnalytics
 
 private const val USER_PREFERENCES_NAME = "user_preferences"
 
@@ -25,5 +26,19 @@ class WalletApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         userPreferencesRepository = UserPreferencesRepository(dataStore)
+    }
+
+    fun applyAnalyticsConsent(enabled: Boolean) {
+        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(enabled)
+    }
+
+    suspend fun updateAnalyticsConsent(enabled: Boolean) {
+        if (!enabled) {
+            applyAnalyticsConsent(false)
+        }
+        userPreferencesRepository.setAnalyticsConsent(enabled)
+        if (enabled) {
+            applyAnalyticsConsent(true)
+        }
     }
 }

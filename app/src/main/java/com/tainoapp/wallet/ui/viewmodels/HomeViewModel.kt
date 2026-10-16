@@ -116,7 +116,7 @@ class HomeViewModel(private val userPreferencesRepository: UserPreferencesReposi
         val newBalance = uiState.value.balance - amountToAdd
         val updatedCategory = category.copy(currentAmount = category.currentAmount + amountToAdd, target = newTarget)
         updateAndSaveCategories(uiState.value.currentCategories.map { if (it.name == category.name) updatedCategory else it })
-        onUpdateBalance(newBalance)
+        viewModelScope.launch { userPreferencesRepository.updateBalance(newBalance) }
         onCloseDialogs()
     }
 
@@ -124,13 +124,23 @@ class HomeViewModel(private val userPreferencesRepository: UserPreferencesReposi
         val newBalance = uiState.value.balance + category.currentAmount
         val clearedCategory = category.copy(currentAmount = 0f, target = 0f)
         updateAndSaveCategories(uiState.value.currentCategories.map { if (it.name == category.name) clearedCategory else it })
-        onUpdateBalance(newBalance)
+        viewModelScope.launch { userPreferencesRepository.updateBalance(newBalance) }
         onCloseDialogs()
     }
 
     fun onUpdateBalance(newBalance: Float) {
-        _dialogAndModeState.update { it.copy(isEditBalanceDialogShown = false) }
+        val amountAdded = newBalance - uiState.value.balance
+        if (amountAdded > 0) {
+            viewModelScope.launch {
+                val currentPeriodKey = uiState.value.currentPeriodKey
+                val fundsHistory = userPreferencesRepository.fundsAddedHistory.first().toMutableMap()
+                val currentAmount = fundsHistory[currentPeriodKey] ?: 0f
+                fundsHistory[currentPeriodKey] = currentAmount + amountAdded
+                userPreferencesRepository.saveFundsAddedHistory(fundsHistory)
+            }
+        }
         viewModelScope.launch { userPreferencesRepository.updateBalance(newBalance) }
+        onCloseDialogs()
     }
 
     companion object {

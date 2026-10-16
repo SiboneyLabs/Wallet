@@ -50,8 +50,8 @@ fun StatisticsScreen() {
             item {
                 Text("Budget History", style = MaterialTheme.typography.headlineMedium)
             }
-            items(uiState.relevantHistory.toList()) { (periodKey, categories) ->
-                HistoryItem(periodKey = periodKey, categories = categories)
+            items(uiState.relevantHistory.toList()) { (periodKey, history) ->
+                HistoryItem(periodKey = periodKey, history = history)
             }
         }
     }

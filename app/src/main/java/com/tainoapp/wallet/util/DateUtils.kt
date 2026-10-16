@@ -8,7 +8,8 @@ import java.util.Locale
 
 object DateUtils {
 
-    private val monthDayFormat = SimpleDateFormat("MMMM d", Locale.getDefault())
+    private val dateLocale = Locale.ENGLISH
+    private val monthDayFormat = SimpleDateFormat("MMMM d", dateLocale)
 
     private fun getDayOfMonthWithSuffix(day: Int): String {
         if (day in 11..13) {
@@ -61,7 +62,7 @@ object DateUtils {
                 }
                 val startDate = cal.time
                 val startDayString = getDayOfMonthWithSuffix(cal.get(Calendar.DAY_OF_MONTH))
-                val startMonthString = SimpleDateFormat("MMMM", Locale.getDefault()).format(startDate)
+                val startMonthString = SimpleDateFormat("MMMM", dateLocale).format(startDate)
                 cal.add(Calendar.DATE, 6)
                 val endDate = cal.time
                 "Week of $startMonthString $startDayString (${monthDayFormat.format(startDate)} - ${monthDayFormat.format(endDate)})"
@@ -77,7 +78,7 @@ object DateUtils {
                 }
                 val startDate = cal.time
                 val startDayString = getDayOfMonthWithSuffix(cal.get(Calendar.DAY_OF_MONTH))
-                val startMonthString = SimpleDateFormat("MMMM", Locale.getDefault()).format(startDate)
+                val startMonthString = SimpleDateFormat("MMMM", dateLocale).format(startDate)
                 cal.add(Calendar.DATE, 13)
                 val endDate = cal.time
                 "Weeks of $startMonthString $startDayString (${monthDayFormat.format(startDate)} - ${monthDayFormat.format(endDate)})"
@@ -88,7 +89,7 @@ object DateUtils {
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, periodNum - 1)
                 }
-                SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
+                SimpleDateFormat("MMMM yyyy", dateLocale).format(cal.time)
             }
             else -> "Unknown Period"
         }
