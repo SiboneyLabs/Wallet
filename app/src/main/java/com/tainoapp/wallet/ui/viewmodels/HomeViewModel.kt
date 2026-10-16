@@ -39,8 +39,8 @@ class HomeViewModel(private val userPreferencesRepository: UserPreferencesReposi
     init {
         viewModelScope.launch {
             // Check for budget rollover
-            val lastRollover = userPreferencesRepository.lastRolloverTimestamp.first()
-            val currentCycle = budgetCycle.first()
+            val lastRollover = userPreferencesRepository.lastRolloverTimestamp.first() // .first() is ok here, as it's a one-time setup
+            val currentCycle = budgetCycle.value
 
             if (DateUtils.isNewPeriod(lastRollover, currentCycle)) {
                 resetAllCategoryAmounts()
@@ -79,29 +79,25 @@ class HomeViewModel(private val userPreferencesRepository: UserPreferencesReposi
     }
 
     fun updateCategory(category: BudgetCategory, amountToAdd: Float, newTarget: Float) {
-        viewModelScope.launch {
-            val currentBalance = balance.first()
-            updateBalance(currentBalance - amountToAdd)
+        val currentBalance = balance.value
+        updateBalance(currentBalance - amountToAdd)
 
-            val updatedCategory = category.copy(
-                currentAmount = category.currentAmount + amountToAdd,
-                target = newTarget
-            )
-            _categories.value = _categories.value.map {
-                if (it.name == category.name) updatedCategory else it
-            }
+        val updatedCategory = category.copy(
+            currentAmount = category.currentAmount + amountToAdd,
+            target = newTarget
+        )
+        _categories.value = _categories.value.map {
+            if (it.name == category.name) updatedCategory else it
         }
     }
 
     fun clearCategory(category: BudgetCategory) {
-        viewModelScope.launch {
-            val currentBalance = balance.first()
-            updateBalance(currentBalance + category.currentAmount)
+        val currentBalance = balance.value
+        updateBalance(currentBalance + category.currentAmount)
 
-            val clearedCategory = category.copy(currentAmount = 0f, target = 0f)
-            _categories.value = _categories.value.map {
-                if (it.name == category.name) clearedCategory else it
-            }
+        val clearedCategory = category.copy(currentAmount = 0f, target = 0f)
+        _categories.value = _categories.value.map {
+            if (it.name == category.name) clearedCategory else it
         }
     }
 
