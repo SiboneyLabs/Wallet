@@ -27,8 +27,9 @@ fun EditBalanceDialog(
     onDismissRequest: () -> Unit,
     onConfirm: (Float) -> Unit
 ) {
-    // State to hold the value of the text field
-    var text by remember { mutableStateOf(currentBalance.toString()) }
+    // If the balance is 0, start with an empty field. Otherwise, show the current balance.
+    val initialText = if (currentBalance == 0f) "" else currentBalance.toString()
+    var text by remember { mutableStateOf(initialText) }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -48,14 +49,9 @@ fun EditBalanceDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val newBalance = text.toFloatOrNull()
-                    if (newBalance != null) {
-                        onConfirm(newBalance)
-                    } else {
-                        // If input is invalid, just dismiss. A more robust implementation
-                        // might show an error message to the user.
-                        onDismissRequest()
-                    }
+                    // If the field is empty, treat it as 0.
+                    val newBalance = text.toFloatOrNull() ?: 0f
+                    onConfirm(newBalance)
                 }
             ) {
                 Text("Update")

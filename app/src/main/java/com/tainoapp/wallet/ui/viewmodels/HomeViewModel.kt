@@ -51,11 +51,11 @@ class HomeViewModel(private val userPreferencesRepository: UserPreferencesReposi
         // Initialize with default categories (or load them from storage in a real app)
         if (_categories.value.isEmpty()) {
             _categories.value = listOf(
-                BudgetCategory("Mortgage", 1200f, 0f, Color(0xFFF44336)),
-                BudgetCategory("Groceries", 400f, 0f, Color(0xFF4CAF50)),
-                BudgetCategory("Gas", 150f, 0f, Color(0xFFFF9800)),
-                BudgetCategory("Other", 200f, 0f, Color(0xFF2196F3)),
-                BudgetCategory("Savings", 500f, 0f, Color(0xFF9C27B0))
+                BudgetCategory("Mortgage", 0f, 0f, Color(0xFFF44336)),
+                BudgetCategory("Groceries", 0f, 0f, Color(0xFF4CAF50)),
+                BudgetCategory("Gas", 0f, 0f, Color(0xFFFF9800)),
+                BudgetCategory("Other", 0f, 0f, Color(0xFF2196F3)),
+                BudgetCategory("Savings", 0f, 0f, Color(0xFF9C27B0))
             )
         }
     }

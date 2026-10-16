@@ -41,8 +41,9 @@ fun UpdateCategoryDialog(
     onConfirm: (amountToAdd: Float, newTarget: Float) -> Unit,
     onClear: () -> Unit
 ) {
+    val initialTargetText = if (category.target == 0f) "" else category.target.toString()
     var amountToAdd by remember { mutableStateOf("") }
-    var newTarget by remember { mutableStateOf(category.target.toString()) }
+    var newTarget by remember { mutableStateOf(initialTargetText) }
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
 
     AlertDialog(
@@ -76,7 +77,7 @@ fun UpdateCategoryDialog(
             TextButton(
                 onClick = {
                     val addAmount = amountToAdd.toFloatOrNull() ?: 0f
-                    val targetAmount = newTarget.toFloatOrNull() ?: category.target
+                    val targetAmount = newTarget.toFloatOrNull() ?: 0f // Treat empty as 0
                     onConfirm(addAmount, targetAmount)
                 }
             ) {
