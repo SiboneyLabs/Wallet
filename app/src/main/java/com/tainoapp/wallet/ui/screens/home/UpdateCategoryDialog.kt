@@ -104,7 +104,7 @@ fun UpdateCategoryDialog(
 fun UpdateCategoryDialogPreview() {
     WalletTheme {
         UpdateCategoryDialog(
-            category = BudgetCategory("Groceries", 400f, 150f, Color.Green),
+            category = BudgetCategory("Groceries", 400f, 150f, Color.Green.value),
             onDismissRequest = {},
             onConfirm = { _, _ -> },
             onClear = {}

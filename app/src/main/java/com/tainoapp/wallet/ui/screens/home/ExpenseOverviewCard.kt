@@ -104,8 +104,8 @@ fun ExpenseOverviewCardPreview() {
         ExpenseOverviewCard(
             budgetCycle = BudgetCycle.WEEKLY,
             categories = listOf(
-                BudgetCategory("Groceries", 400f, 150f, Color.Green),
-                BudgetCategory("Gas", 150f, 75f, Color.Red)
+                BudgetCategory("Groceries", 400f, 150f, Color.Green.value),
+                BudgetCategory("Gas", 150f, 75f, Color.Red.value)
             ),
             isRemoveModeEnabled = false,
             onAddCategory = {},

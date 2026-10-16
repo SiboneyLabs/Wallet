@@ -40,13 +40,6 @@ private fun formatAmount(amount: Float): String {
     }
 }
 
-/**
- * A single row in the expense overview, representing one category.
- * @param category The category to display.
- * @param isRemoveMode Whether the UI is in remove mode.
- * @param onClick The action to perform when the item is tapped.
- * @param onRemoveClick The action to perform when the remove icon is tapped.
- */
 @Composable
 fun CategoryItem(
     category: BudgetCategory,
@@ -72,7 +65,7 @@ fun CategoryItem(
             modifier = Modifier
                 .size(16.dp)
                 .clip(CircleShape)
-                .background(category.color)
+                .background(Color(category.colorValue))
         )
 
         Column(modifier = Modifier.weight(1f)) {
@@ -87,7 +80,7 @@ fun CategoryItem(
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier.fillMaxWidth(),
-                color = category.color,
+                color = Color(category.colorValue),
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }
@@ -112,13 +105,13 @@ fun CategoryItemPreview() {
     WalletTheme {
         Column {
             CategoryItem(
-                category = BudgetCategory("Groceries", 400f, 150f, Color(0xFF4CAF50)),
+                category = BudgetCategory("Groceries", 400f, 150f, Color(0xFF4CAF50).value),
                 isRemoveMode = false,
                 onClick = {},
                 onRemoveClick = {}
             )
             CategoryItem(
-                category = BudgetCategory("Gas", 150f, 160f, Color(0xFFFF9800)),
+                category = BudgetCategory("Gas", 150f, 160f, Color(0xFFFF9800).value),
                 isRemoveMode = true,
                 onClick = {},
                 onRemoveClick = {}
