@@ -89,9 +89,10 @@ fun SettingsScreenContent(
         }
 
         // About Section
-        Column(modifier = Modifier.clickable(onClick = onAboutClick)) {
+        Column {
             Text("About", style = MaterialTheme.typography.titleLarge)
             Text("App Version: ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium)
+            Text("Created by Taino App", style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

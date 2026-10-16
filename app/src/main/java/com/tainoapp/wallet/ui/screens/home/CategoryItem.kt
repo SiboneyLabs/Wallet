@@ -31,8 +31,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tainoapp.wallet.data.BudgetCategory
 import com.tainoapp.wallet.ui.theme.WalletTheme
-import java.text.NumberFormat
-import java.util.Locale
+
+private fun formatAmount(amount: Float): String {
+    return if (amount == amount.toInt().toFloat()) {
+        amount.toInt().toString()
+    } else {
+        String.format("%.2f", amount)
+    }
+}
 
 /**
  * A single row in the expense overview, representing one category.
@@ -48,11 +54,11 @@ fun CategoryItem(
     onClick: () -> Unit,
     onRemoveClick: () -> Unit
 ) {
-    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
     val progress = if (category.target > 0) category.currentAmount / category.target else 0f
 
-    val showWarning = category.currentAmount >= category.target && category.name !in listOf("Mortgage", "Savings")
-    val showSatisfied = category.currentAmount >= category.target && category.name == "Savings"
+    val shouldShowIcons = category.target > 0f && category.currentAmount >= category.target
+    val showWarning = shouldShowIcons && category.name !in listOf("Mortgage", "Savings")
+    val showSatisfied = shouldShowIcons && category.name == "Savings"
 
     Row(
         modifier = Modifier
@@ -73,7 +79,7 @@ fun CategoryItem(
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text(text = category.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 Text(
-                    text = "${currencyFormat.format(category.currentAmount)} / ${currencyFormat.format(category.target)}",
+                    text = "${formatAmount(category.currentAmount)} / ${formatAmount(category.target)}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
