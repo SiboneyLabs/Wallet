@@ -7,7 +7,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
 
-const val PRIVACY_POLICY_URL = "https://siboneylabs.github.io/Wallet/"
+const val PRIVACY_POLICY_URL = "https://siboneylabs.github.io/Wallet/privacy-policy"
 
 @Composable
 fun AnalyticsConsentDialog(onChoice: (Boolean) -> Unit) {
