@@ -28,7 +28,7 @@ Wallet does not send your balance, budget amounts, category names, or budget his
 
 ### Advertising
 
-Wallet shows an occasional full-screen (interstitial) ad, at most once per app session, roughly one minute after you open the app. Ads are provided by Google AdMob. When an ad is requested, Google's Google Mobile Ads SDK may collect and process information such as your device's IP address, device and operating-system details, app information, ad-interaction data, and identifiers needed to serve and measure ads, in line with Google's policies.
+Wallet shows an occasional full-screen (interstitial) ad, at most once per app session, roughly one minute after you open the app. Ads are provided by Google AdMob. When an ad is requested, Google's Google Mobile Ads SDK may collect and process information such as your device's IP address, device and operating-system details, app information, ad-interaction data, and identifiers needed to serve and measure ads, in line with Google's policies. Google may use your IP address to estimate the general (approximate) location of your device, for example to serve and measure ads and to prevent fraud. Wallet itself does not request or access your device's location.
 
 Wallet does not request the Android advertising ID (AD_ID) permission, so ads are served without it and are expected to be non-personalized. Your balance, budget amounts, category names, and budget history are never included in ad requests.
 
