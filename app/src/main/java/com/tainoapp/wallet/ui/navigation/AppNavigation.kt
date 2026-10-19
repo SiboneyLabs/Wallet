@@ -147,6 +147,11 @@ fun AppNavigation(windowSizeClass: WindowSizeClass) {
             !hasAuthenticatedThisSession) ||
         lockDue
 
+    DisposableEffect(showLock) {
+        application.interstitialAdManager.isSuppressed = showLock
+        onDispose { application.interstitialAdManager.isSuppressed = false }
+    }
+
     LaunchedEffect(showLock, promptRequest) {
         if (showLock) {
             val prompt = BiometricPrompt(

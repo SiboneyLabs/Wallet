@@ -1,0 +1,4 @@
+# Copy these keys into local.properties (gitignored). Needed for release builds.
+admob.appId=ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX
+admob.interstitialId=ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX
+

@@ -1,5 +1,7 @@
 package com.tainoapp.wallet.ui.screens
 
+import android.app.Activity
+import android.content.ContextWrapper
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,9 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,6 +29,12 @@ import com.tainoapp.wallet.WalletApplication
 import com.tainoapp.wallet.data.BudgetCycle
 import com.tainoapp.wallet.ui.viewmodels.SettingsViewModel
 import kotlinx.coroutines.launch
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 @Composable
 fun SettingsScreen() {
@@ -89,6 +99,15 @@ fun SettingsScreen() {
                     }
                 }
             )
+        }
+        if (application.consentManager.isPrivacyOptionsRequired) {
+            OutlinedButton(
+                onClick = {
+                    context.findActivity()?.let { application.consentManager.showPrivacyOptionsForm(it) }
+                }
+            ) {
+                Text("Ad privacy options")
+            }
         }
     }
 }

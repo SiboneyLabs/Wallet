@@ -5,6 +5,10 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.fragment.app.FragmentActivity
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +30,21 @@ class MainActivity : FragmentActivity() {
         WindowInsetsControllerCompat(window, window.decorView).run {
             isAppearanceLightStatusBars = !isDarkTheme
             isAppearanceLightNavigationBars = !isDarkTheme
+        }
+
+        val walletApp = application as WalletApplication
+        walletApp.consentManager.gatherConsent(this) {
+            walletApp.interstitialAdManager.initializeAndLoad()
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // A dialog or system prompt on top (consent form, biometric prompt, app dialogs)
+                // takes window focus, so it is used as the "nothing is in the way" signal.
+                walletApp.interstitialAdManager.showAfterLaunchDelay(this@MainActivity) {
+                    window.decorView.hasWindowFocus()
+                }
+            }
         }
 
         setContent {

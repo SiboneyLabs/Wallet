@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.tainoapp.wallet.ads.ConsentManager
+import com.tainoapp.wallet.ads.InterstitialAdManager
 import com.tainoapp.wallet.repository.UserPreferencesRepository
 import com.google.firebase.analytics.FirebaseAnalytics
 
@@ -22,10 +24,14 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 class WalletApplication : Application() {
     // The repository is lazy-initialized, so it's only created when first needed
     lateinit var userPreferencesRepository: UserPreferencesRepository
+    lateinit var consentManager: ConsentManager
+    lateinit var interstitialAdManager: InterstitialAdManager
 
     override fun onCreate() {
         super.onCreate()
         userPreferencesRepository = UserPreferencesRepository(dataStore)
+        consentManager = ConsentManager(this)
+        interstitialAdManager = InterstitialAdManager(this)
     }
 
     fun applyAnalyticsConsent(enabled: Boolean) {

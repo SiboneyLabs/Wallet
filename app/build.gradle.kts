@@ -14,6 +14,30 @@ val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
+// AdMob IDs are kept outside the repo: local.properties (gitignored) or environment variables.
+// Debug builds fall back to Google's public test IDs; release builds require the real ones.
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) FileInputStream(file).use { load(it) }
+}
+fun secret(key: String, envName: String): String? =
+    (localProperties.getProperty(key) ?: System.getenv(envName))?.takeIf { it.isNotBlank() }
+
+val testAdmobAppId = "ca-app-pub-3940256099942544~3347511713"
+val testInterstitialId = "ca-app-pub-3940256099942544/1033173712"
+val releaseAdmobAppId = secret("admob.appId", "ADMOB_APP_ID")
+val releaseInterstitialId = secret("admob.interstitialId", "ADMOB_INTERSTITIAL_ID")
+
+gradle.taskGraph.whenReady {
+    val releaseRequested = allTasks.any { it.project == project && it.name.contains("Release") }
+    if (releaseRequested && (releaseAdmobAppId == null || releaseInterstitialId == null)) {
+        throw GradleException(
+            "Missing AdMob IDs for a release build. Set admob.appId and admob.interstitialId " +
+                "in local.properties (or ADMOB_APP_ID / ADMOB_INTERSTITIAL_ID env vars)."
+        )
+    }
+}
+
 configurations.all {
     resolutionStrategy {
         force(libs.androidx.activity.compose)
@@ -40,14 +64,22 @@ android {
         applicationId = "com.tainoapp.wallet"
         minSdk = 24
         targetSdk = 36
-        versionCode = 21
-        versionName = "2.2"
+        versionCode = 22
+        versionName = "2.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["admobAppId"] = testAdmobAppId
+            buildConfigField("String", "ADMOB_INTERSTITIAL_ID", "\"$testInterstitialId\"")
+        }
         release {
+            manifestPlaceholders["admobAppId"] = releaseAdmobAppId ?: testAdmobAppId
+            buildConfigField(
+                "String", "ADMOB_INTERSTITIAL_ID", "\"${releaseInterstitialId ?: testInterstitialId}\""
+            )
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -94,7 +126,9 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.play.services.ads)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
